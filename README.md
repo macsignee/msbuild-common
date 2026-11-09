@@ -73,11 +73,11 @@ Claude は、共通ファイルの中身を決めない。**外の正本 (この
 | `~/src/msbuild-common` (WSL) | **編集・コミット・push をする clone** |
 | `C:\tools\msbuild-common` (= `/mnt/c/tools/msbuild-common`) | **配布先。** `install.sh` が、コピーする。**git のリポジトリにしない (clone しない)。直接、編集しない** |
 
-- **直すとき:** `~/src/msbuild-common` を直す → `VERSION` と `Common.props` の `MsbuildCommonVersion` を、同じ値に上げる → コミット・push → `./install.sh` (`--dry-run` で、先に、変わるファイルを確かめられる) で、配布先へコピーする (`cmp` で、同一を確認する)。
+- **直すとき:** `~/src/msbuild-common` を直す → `VERSION` と `Common.props` の `MsbuildCommonVersion` を、同じ値に上げる → コミット・push → `bash install.sh` (`--dry-run` で、先に、変わるファイルを確かめられる) で、配布先へコピーする (`cmp` で、同一を確認する)。
 - **使う側 (`claude-windows-desktop-tools`) は、2 とおりに使う。**
   - **参照型 (既定):** 環境変数 `MSBUILD_COMMON_DIR` (または、ソリューションの `CLAUDE.md` の `- MSBuild 共通: <パス>`) が、**配布先**を指す。配り直せば、すべてのソリューションに効く。
-  - **同梱コピー:** 場所の指定がないとき、使う側が、`skills/new-solution/msbuild-common/` に取り込んだ版を使う (コピー型)。このコピーは、使う側の `tools/sync-msbuild-common.sh ~/src/msbuild-common` で、取り込む。**使う側のコピーを、直接、直さない。**
-- **版を上げたら:** (1) `./install.sh` で、配布先へ。(2) 使う側で、`tools/sync-msbuild-common.sh ~/src/msbuild-common` → テスト → CHANGELOG に取り込んだ版を書く → `install.sh --skills-only`。(3) すでにあるソリューション (コピー型) は、`/add-project common` で、新しい版に差し替える。
+  - **同梱コピー:** 場所の指定がないとき、使う側が、`skills/new-solution/msbuild-common/` に取り込んだ版を使う (コピー型)。このコピーは、使う側の `bash tools/sync-msbuild-common.sh ~/src/msbuild-common` で、取り込む。**使う側のコピーを、直接、直さない。**
+- **版を上げたら:** (1) `bash install.sh` で、配布先へ。(2) 使う側で、`bash tools/sync-msbuild-common.sh ~/src/msbuild-common` → テスト → CHANGELOG に取り込んだ版を書く → `install.sh --skills-only`。(3) すでにあるソリューション (コピー型) は、`/add-project common` で、新しい版に差し替える。
 - **環境変数:** WSL と Windows の両方に、同じフォルダで設定する。WSL = `/mnt/c/tools/msbuild-common` (`~/.bashrc`)、Windows = `C:\tools\msbuild-common` (ユーザー環境変数。設定後、Visual Studio を再起動し、ウォッチャーを起動し直す)。`C:\Tools\...` と `C:\tools\...` は、Windows では、同じフォルダ。
 
 ## テスト

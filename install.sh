@@ -5,7 +5,7 @@
 # コピー先は、git のリポジトリにしない (clone しない)。直すときは、この clone (~/src/msbuild-common) を直して、コミット・push し、
 # このスクリプトで、配り直す。コピー先を、直接、編集しない。
 #
-# Usage: ./install.sh [--dest DIR] [--dry-run]
+# Usage: bash install.sh [--dest DIR] [--dry-run]     (実行権に頼らず、bash で実行する。host-tools の install.sh と同じ)
 #
 #   --dest DIR   コピー先 (既定: /mnt/c/tools/msbuild-common。Windows では C:\tools\msbuild-common = C:\Tools\msbuild-common。
 #                Windows 側の環境変数 MSBUILD_COMMON_DIR が、この場所を指す)
@@ -68,5 +68,5 @@ done
 echo "   OK  $changed ファイルをコピーした (版 ${old:-なし} -> $ver)"
 w="$(wslpath -w "$DEST" 2>/dev/null)"
 [ -n "$w" ] && echo "   Windows 側のパス: $w (環境変数 MSBUILD_COMMON_DIR は、これを指す)"
-echo "次: 利用側 (claude-windows-desktop-tools) で、tools/sync-msbuild-common.sh を実行して、同梱コピーに取り込む"
+echo "次: 利用側 (claude-windows-desktop-tools) で、bash tools/sync-msbuild-common.sh <この clone> を実行して、同梱コピーに取り込む"
 exit 0
