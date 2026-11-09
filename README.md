@@ -1,6 +1,6 @@
 # msbuild-common
 
-MSBuild の共通設定 (`Directory.Build.props` / `Directory.Build.targets`) のたたき台。**v0.2.0。** `/new-solution` が、新規のソリューションに、薄いファイルと `build\common\` を作り (v2.65.0)、`/add-project common` が、すでにあるソリューションに足す (v2.66.0)。将来、別のリポジトリに分けて、共通のベースにする。
+MSBuild の共通設定 (`Directory.Build.props` / `Directory.Build.targets`)。**版は `VERSION` のとおり。** Windows デスクトップ (C++ / MFC / Win32 / WPF / WinForms) のソリューションで、共通の設定を 1 か所に置くためのもの。使う側は [`macsignee/claude-windows-desktop-tools`](https://github.com/macsignee/claude-windows-desktop-tools) (`/new-solution` と `/add-project common`)。Claude は、**このリポジトリの中身を決めず、読んで、ソリューションに合わせて置くだけ**。
 
 ## 目的
 
@@ -29,13 +29,13 @@ MSBuild の共通設定 (`Directory.Build.props` / `Directory.Build.targets`) �
 | `DLL002` | MFC 拡張 DLL (`_AFXEXT`) で、`UseOfMfc` が `Dynamic` でない | mfc-check の DLL002 |
 | `DLL003` | MFC の DLL で、`UseOfMfc` が有効なのに、`_USRDLL` も `_AFXEXT` もない (警告のみ) | mfc-check の DLL003 |
 
-- **層の役割は、プロジェクトの名前から決める** (`solution_state.py` の `role_of_name` と同じ規則。`tests/msbuild_common_test.sh` が、同じ判定になることを確かめる)。決まらないときは、プロジェクトに `<ClaudeLayerRole>data|logic|viewmodel|ui|other</ClaudeLayerRole>`。exe は `main` (どの層も、参照してよい)。名前が `Test` / `Tests` で終わるプロジェクトは、検査しない。
+- **層の役割は、プロジェクトの名前から決める** (`solution_state.py` の `role_of_name` と同じ規則。`claude-windows-desktop-tools` の `tests/msbuild_common_test.sh` が、同じ判定になることを確かめる)。決まらないときは、プロジェクトに `<ClaudeLayerRole>data|logic|viewmodel|ui|other</ClaudeLayerRole>`。exe は `main` (どの層も、参照してよい)。名前が `Test` / `Tests` で終わるプロジェクトは、検査しない。
 - **`ClaudeCheck`** (`Common.props` の既定は `warning`): `off` = 検査しない / `warning` = 警告を出す / `error` = `LAY001`・`LAY003`・`DLL001`・`DLL002` を、エラーにする。`/p:ClaudeCheck=error` か、各プロジェクトの `<ClaudeCheck>` で変える。警告は、ウォッチャーの `warnings.log` に出る。
 - **違いと限界:** C++ の検査は、ビルドしている構成だけを見る (mfc-check は、全部の構成)。参照先の役割は、名前だけで決める (参照先の exe は、見分けない)。参照先の MFC の設定 (`DLL008`) は、参照先を評価しないと分からないので、含めない。
 
 ## ソリューションへの置き方
 
-Claude は、共通ファイルの中身を決めない。**外の正本 (この `msbuild-common/`。将来は別のリポジトリ) を読んで、ソリューションに合わせて置く。** 置き方は、2 つ。
+Claude は、共通ファイルの中身を決めない。**外の正本 (この `msbuild-common` リポジトリ) を読んで、ソリューションに合わせて置く。** 置き方は、2 つ。
 
 **参照型** (正本の場所が、環境変数か `CLAUDE.md` で決まるとき。既定):
 
@@ -63,17 +63,33 @@ Claude は、共通ファイルの中身を決めない。**外の正本 (この
 
 **正本に求める形 (読み込む側との約束):** `Common.props`・`Common.targets`・`VERSION`、コピー型には `Dotnet.props`・`templates/Directory.Build.{props,targets}`、参照型には `templates/reference/Directory.Build.{props,targets}`。`/new-solution` と `/add-project common` は、足りないファイルがあると、何も書かずに止まる。
 
-## 正本と、配布用のコピー
+## 運用 (host-tools と同じ)
 
-- 正本は、この `msbuild-common/`。**場所の指定がないとき**、`/new-solution` が使うのは、`skills/new-solution/msbuild-common/` のコピー (`install.sh` は `skills/` だけを配るため)。**正本を変えたら、同じファイルを、コピーにも同期する** (`tests/msbuild_common_test.sh` が、同じであることを確かめる)。
+`claude-windows-desktop-tools` の `host-tools/` (`install.sh` が Windows 側のフォルダへ、コピーする) と、同じ運用。
 
-## 別のリポジトリに分けるとき
+| 場所 | 役割 |
+|---|---|
+| GitHub `macsignee/msbuild-common` | 正本のリポジトリ |
+| `~/src/msbuild-common` (WSL) | **編集・コミット・push をする clone** |
+| `C:\tools\msbuild-common` (= `/mnt/c/tools/msbuild-common`) | **配布先。** `install.sh` が、コピーする。**git のリポジトリにしない (clone しない)。直接、編集しない** |
 
-- 共通ファイルは、スキルのパスや `CLAUDE.md` に、触れない。そのまま、移せる。
-- 分ける時期は、使う側が 2 つ以上になる、または、中身が安定したあと。
+- **直すとき:** `~/src/msbuild-common` を直す → `VERSION` と `Common.props` の `MsbuildCommonVersion` を、同じ値に上げる → コミット・push → `./install.sh` (`--dry-run` で、先に、変わるファイルを確かめられる) で、配布先へコピーする (`cmp` で、同一を確認する)。
+- **使う側 (`claude-windows-desktop-tools`) は、2 とおりに使う。**
+  - **参照型 (既定):** 環境変数 `MSBUILD_COMMON_DIR` (または、ソリューションの `CLAUDE.md` の `- MSBuild 共通: <パス>`) が、**配布先**を指す。配り直せば、すべてのソリューションに効く。
+  - **同梱コピー:** 場所の指定がないとき、使う側が、`skills/new-solution/msbuild-common/` に取り込んだ版を使う (コピー型)。このコピーは、使う側の `tools/sync-msbuild-common.sh ~/src/msbuild-common` で、取り込む。**使う側のコピーを、直接、直さない。**
+- **版を上げたら:** (1) `./install.sh` で、配布先へ。(2) 使う側で、`tools/sync-msbuild-common.sh ~/src/msbuild-common` → テスト → CHANGELOG に取り込んだ版を書く → `install.sh --skills-only`。(3) すでにあるソリューション (コピー型) は、`/add-project common` で、新しい版に差し替える。
+- **環境変数:** WSL と Windows の両方に、同じフォルダで設定する。WSL = `/mnt/c/tools/msbuild-common` (`~/.bashrc`)、Windows = `C:\tools\msbuild-common` (ユーザー環境変数。設定後、Visual Studio を再起動し、ウォッチャーを起動し直す)。`C:\Tools\...` と `C:\tools\...` は、Windows では、同じフォルダ。
+
+## テスト
+
+静的な検査 (XML、版の一致、`Dotnet.props`・薄いファイルの形、`ClaudeCheckProject` の条件) は、使う側の `tests/msbuild_common_test.sh` が行う (このリポジトリには、まだ、テストを置いていない)。MSBuild の式は、WSL では実行できないので、**実機 (Windows) で確かめる**: 使う側の `docs/TEST-PLAN.md` の 2-40〜2-42 (新規作成・参照型・`/add-project common`・`ClaudeCheckProject`)。
 
 ## 今後の候補
 
 - C++ の共通設定 (`Cpp.props`): `OutDir`・`IntDir`・`WarningLevel` など。既存の `.vcxproj` の設定との優先順位を、確かめてから。
 - ビルドの情報を、ウォッチャーの結果に使う。
 - 品質の強制 (警告をエラーにする) は、生成直後のビルドが通らなくなる恐れがあるので、段階的に。
+
+## ライセンス
+
+[MIT License](LICENSE.md)。
